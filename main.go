@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/minsvc/automic/internal/routers"
+	"automic/internal/routers"
 	"net/http"
 	"time"
 )
@@ -9,7 +9,7 @@ import (
 func main() {
 	router := routers.NewRouter()
 	s := &http.Server{
-		Addr:           ":8080",
+		Addr:           ":8888",
 		Handler:        router,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
