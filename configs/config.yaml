@@ -21,3 +21,8 @@ Database:
   ParseTime: True
   MaxIdleConns: 10
   MaxOpenConns: 30
+Oss:
+  Endpoint: 192.168.60.32:9000
+  AccessKeyID: v4dTzlyVJUW8vwDs
+  SecretAccessKey: OSUcBU2RyGUu0Lvn75nxJ5sbbVRQigIT
+  BucketName: mybucket

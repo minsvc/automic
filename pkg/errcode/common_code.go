@@ -11,3 +11,14 @@ var (
 	UnauthorizedTokenGenerate = NewError(10000006, "鉴权失败，Token 生成失败")
 	TooManyRequests           = NewError(10000007, "请求过多")
 )
+
+var (
+	ErrorGetTagListFail   = NewError(20010001, "获取脚本列表失败")
+	ErrorCreateTagFail    = NewError(20010002, "创建脚本失败")
+	ErrorUpdateTagFail    = NewError(20010003, "更新脚本失败")
+	ErrorDeleteTagFail    = NewError(20010004, "删除脚本失败")
+	ErrorCountTagFail     = NewError(20010005, "统计脚本失败")
+	ErrorUploadFileFail   = NewError(20010006, "上传文件失败")
+	ErrorDownloadFileFail = NewError(20010007, "获取文件失败")
+	ErrorSSHConnectFail   = NewError(20010008, "获取SSH连接失败")
+)

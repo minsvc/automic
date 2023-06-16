@@ -2,9 +2,13 @@ package v1
 
 import (
 	"automic/global"
+	"automic/internal/service"
 	"automic/pkg/app"
+	"automic/pkg/convert"
 	"automic/pkg/errcode"
+	"automic/pkg/utils"
 	"github.com/gin-gonic/gin"
+	"strings"
 )
 
 type Script struct{}
@@ -21,7 +25,28 @@ func NewScript() Script {
 // @Failure 500 {object} errcode.Error "内部错误"
 // @Router /api/v1/scripts/{id} [get]
 func (s Script) Get(c *gin.Context) {
-	app.NewResponse(c).ToErrorResponse(errcode.ServerError)
+
+	param := service.GetScriptRequest{ID: convert.StrTo(c.Param("id")).MustUInt32()}
+	response := app.NewResponse(c)
+	valid, errs := app.BindAndValid(c, &param)
+	if !valid {
+		global.Logger.Errorf(c, "app.BindAndValid errs: %v", errs)
+		response.ToErrorResponse(errcode.InvalidParams.WithDetails(errs.Errors()...))
+		return
+	}
+
+	svc := service.New(c.Request.Context())
+	script, err := svc.GetScript(&param)
+
+	data := utils.OssDownload("mybucket", script.Title, script.Version)
+	if err != nil {
+		global.Logger.Errorf(c, "Get script err: %v", err)
+		response.ToErrorResponse(errcode.ErrorDownloadFileFail.WithDetails(err.Error()))
+	}
+
+	response.ToResponse(gin.H{
+		"info": data,
+	})
 	return
 }
 
@@ -61,7 +86,38 @@ func (s Script) List(c *gin.Context) {
 // @Failure 400 {object} errcode.Error "请求错误"
 // @Failure 500 {object} errcode.Error "内部错误"
 // @Router /api/v1/scripts [post]
-func (s Script) Create(c *gin.Context) {}
+func (s Script) Create(c *gin.Context) {
+
+	response := app.NewResponse(c)
+
+	file, script, err := c.Request.FormFile("script")
+	if err != nil {
+		response.ToErrorResponse(errcode.InvalidParams.WithDetails(err.Error()))
+		return
+	}
+	suffix := strings.Split(script.Filename, ".")[1]
+
+	versionid, err := utils.OssUpload(file, script.Filename, script.Size, suffix)
+	if err != nil {
+		global.Logger.Errorf(c, "Upload script err: %v", err)
+		response.ToErrorResponse(errcode.ErrorUploadFileFail.WithDetails(err.Error()))
+	}
+
+	svc := service.New(c.Request.Context())
+
+	//models.Add(versionid, script.Filename, "test", claims.Username, suffix)
+	err = svc.CreateScript(versionid, script.Filename, "test", "user1", suffix)
+	if err != nil {
+		global.Logger.Errorf(c, "svc.CreateTag err: %v", err)
+		response.ToErrorResponse(errcode.ErrorCreateTagFail)
+		return
+	}
+
+	response.ToResponse(gin.H{
+		"info": "upload success",
+	})
+	return
+}
 
 // @Summary 更新标签
 // @Produce  json
@@ -83,3 +139,28 @@ func (s Script) Update(c *gin.Context) {}
 // @Failure 500 {object} errcode.Error "内部错误"
 // @Router /api/v1/scripts/{id} [delete]
 func (s Script) Delete(c *gin.Context) {}
+
+func (s Script) Exec(c *gin.Context) {
+	param := service.ExecScriptRequest{}
+	response := app.NewResponse(c)
+	valid, errs := app.BindAndValid(c, &param)
+	if !valid {
+		global.Logger.Errorf(c, "app.BindAndValid errs: %v", errs)
+		response.ToErrorResponse(errcode.InvalidParams.WithDetails(errs.Errors()...))
+		return
+	}
+
+	svc := service.New(c.Request.Context())
+	result, err := svc.ExecScript(&param)
+
+	if err != nil {
+
+		response.ToErrorResponse(errcode.ErrorSSHConnectFail.WithDetails(err.Error()))
+	}
+
+	response.ToResponse(gin.H{
+		"info":  result,
+		"error": err,
+	})
+	return
+}
