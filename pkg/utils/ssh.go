@@ -30,6 +30,7 @@ func SshCommand(data interface{}, ip string, port string, user string, password 
 
 	if err != nil {
 		global.Logger.Errorf(ctx, "SSH command errs: %v", err.Error())
+		return "ssh command fail", err
 	}
 	result := bytes.NewBuffer(output).String()
 	return result, err

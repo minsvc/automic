@@ -3,6 +3,7 @@ package service
 import (
 	"automic/pkg/utils"
 	"fmt"
+	"strconv"
 )
 
 type CountScriptRequest struct {
@@ -70,11 +71,19 @@ func (svc *Service) GetScript(param *GetScriptRequest) (*Script, error) {
 
 func (svc *Service) ExecScript(param *ExecScriptRequest) (string, error) {
 
+	intVar, _ := strconv.Atoi(param.Port)
 	script, _ := svc.GetScript(&GetScriptRequest{ID: param.ID})
 
 	data := utils.OssDownload("mybucket", script.Title, script.Version)
 	fmt.Printf("%v", param)
-	result, err := utils.SshCommand(data, param.Ip, param.Port, param.User, param.Password)
+	fmt.Printf(script.Language)
+	switch script.Language {
+	case "bat":
+		result, err := utils.BatCommand(data, param.Ip, intVar, param.User, param.Password)
+		return result, err
+	default:
+		result, err := utils.SshCommand(data, param.Ip, param.Port, param.User, param.Password)
+		return result, err
+	}
 
-	return result, err
 }
